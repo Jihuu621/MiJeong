@@ -5,10 +5,15 @@ public class Health : MonoBehaviour
     public float maxHP = 100f;
     public float currentHP;
     public System.Action OnDeath; // 죽었을 때 이벤트
+    public EnemyData enemyData;
 
     private void Awake()
     {
-        currentHP = maxHP;
+        if (enemyData != null)
+        {
+            maxHP = enemyData.MaxHP;
+            currentHP = maxHP;
+        }
     }
 
     public void SetMaxHP(float max)
