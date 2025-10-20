@@ -4,17 +4,20 @@ public class Health : MonoBehaviour
 {
     public float maxHP = 100f;
     public float currentHP;
-    public System.Action OnDeath; // 죽었을 때 이벤트
+    public System.Action OnDeath;
     public EnemyData enemyData;
 
     private void Awake()
     {
-        if (enemyData != null)
+        if (CompareTag("Enemy") && enemyData != null)
         {
             maxHP = enemyData.MaxHP;
-            currentHP = maxHP;
         }
+
+        // Player나 Enemy 둘 다 체력 기본 세팅
+        currentHP = maxHP;
     }
+
 
     public void SetMaxHP(float max)
     {
@@ -24,6 +27,38 @@ public class Health : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
+        PlayerGuard guard = GetComponent<PlayerGuard>();
+
+        if (CompareTag("Player") && guard != null)
+        {
+            guard.NotifyEnemyAttack();
+
+            if (guard.isGuarding)
+            {
+                bool perfect = guard.TryPerfectGuard();
+
+                if (perfect)
+                {
+                    Debug.Log("완벽 가드 성공 - 피해 없음");
+                    return;
+                }
+
+                // 일반 가드
+                if (guard.guardGauge > 0)
+                {
+                    damage = guard.GetDamageAfterGuard(damage);
+                    guard.UseGuardGauge(guard.guardHitCost);
+                }
+                else
+                {
+                    // 게이지없으면넉백
+                    PlayerController player = GetComponent<PlayerController>();
+                    if (player != null)
+                        guard.ApplyGuardBreakKnockback(player);
+                }
+            }
+        }
+
         currentHP -= damage;
         Debug.Log($"{gameObject.name} HP: {currentHP}");
 
@@ -33,6 +68,9 @@ public class Health : MonoBehaviour
             Die();
         }
     }
+
+
+
 
     public void Heal(float amount)
     {

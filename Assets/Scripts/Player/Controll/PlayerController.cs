@@ -1,60 +1,45 @@
-﻿// PlayerController.cs
-// Unity 2D 플랫포머 이동 시스템
-// 플레이어 오브젝트에 부착해야 함. 필요한 컴포넌트:
-//  - Rigidbody2D (Body Type = Dynamic, Z축 회전 고정)
-//  - Collider2D (CapsuleCollider2D 또는 BoxCollider2D)
-//  - 발밑/벽 체크용 Transform 자식 오브젝트
-// 기능:
-//  - 부드러운 좌우 이동 (가속 / 감속)
-//  - 가변 점프 높이 (점프 키를 오래 누르면 높이 점프)
-//  - 코요티 타임 (땅에서 떨어진 직후 잠시 점프 가능)
-//  - 점프 버퍼링 (착지 직전 미리 점프 입력 가능)
-//  - 벽 미끄러짐 및 벽 점프
-//  - 선택적 대시 기능 (쿨다운 포함)
-// Unity의 구 Input System (Input.GetAxis / GetButton) 기반. 새 Input System 사용 시 입력 부분 수정 필요.
-
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
     [Header("이동")]
     public float moveSpeed = 8f;                // 최대 속도
-    public float acceleration = 60f;            // 최고 속도에 도달하는 속도
-    public float deceleration = 60f;            // 멈추는 속도
-    public float velPower = 0.9f;               // 가속 반응 조절
+    public float acceleration = 60f;
+    public float deceleration = 60f;
+    public float velPower = 0.9f;
 
     [Header("점프")]
-    public float jumpForce = 18f;               // 초기 점프 힘
-    public float jumpCutMultiplier = 0.5f;      // 점프 도중 키를 떼면 줄어드는 비율
-    public int extraJumps = 0;                  // 추가 점프 횟수 (0 = 없음)
+    public float jumpForce = 18f;
+    public float jumpCutMultiplier = 0.5f;
+    public int extraJumps = 0;
 
     [Header("점프 보정")]
-    public float gravityScale = 3f;             // 기본 중력 배율
-    public float fallGravityMultiplier = 2.5f;  // 낙하 중 추가 중력 배율
+    public float gravityScale = 3f;
+    public float fallGravityMultiplier = 2.5f;
 
     [Header("땅 & 벽 체크")]
-    public Transform groundCheck;               // 발밑 체크 위치
+    public Transform groundCheck;
     public float groundCheckRadius = 0.08f;
     public LayerMask groundLayer;
 
-    public Transform wallCheck;                 // 벽 체크 위치
+    public Transform wallCheck;
     public float wallCheckDistance = 0.2f;
 
     [Header("코요티 & 버퍼")]
-    public float coyoteTime = 0.12f;            // 땅에서 떨어진 뒤 점프 가능 시간
-    public float jumpBufferTime = 0.12f;        // 점프 입력을 미리 받아두는 시간
+    public float coyoteTime = 0.12f;
+    public float jumpBufferTime = 0.12f;
 
     [Header("벽 미끄러짐/점프")]
-    public float wallSlideSpeed = 2.5f;         // 벽 미끄러짐 속도
-    public Vector2 wallJumpVelocity = new Vector2(12f, 18f); // 벽 점프 힘
-    public float wallJumpDuration = 0.18f;      // 벽 점프 후 입력 잠금 시간
+    public float wallSlideSpeed = 2.5f;
+    public Vector2 wallJumpVelocity = new Vector2(12f, 18f);
+    public float wallJumpDuration = 0.18f;
 
     [Header("대시 (옵션)")]
     public bool allowDash = false;
-    public float dashSpeed = 20f;               // 대시 속도
-    public float dashDuration = 0.14f;          // 대시 지속 시간
-    public float dashCooldown = 0.6f;           // 대시 쿨다운
+    public float dashSpeed = 20f;
+    public float dashDuration = 0.14f;
+    public float dashCooldown = 0.6f;
 
     // 내부 변수들
     Rigidbody2D rb;
@@ -80,6 +65,9 @@ public class PlayerController : MonoBehaviour
     float dashTimer;
     float dashCooldownTimer;
 
+    // 넉백 상태
+    float knockbackTimer = 0f;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -91,6 +79,14 @@ public class PlayerController : MonoBehaviour
     {
         // --- 입력 (구 Input System) ---
         horizontal = Input.GetAxisRaw("Horizontal"); // -1,0,1
+
+        // 넉백 중이면 입력 무시 (Update에서도 막아두기)
+        if (knockbackTimer > 0f)
+        {
+            // 입력 차단
+            horizontal = 0f;
+            knockbackTimer -= Time.deltaTime;
+        }
 
         // 점프 입력
         if (Input.GetButtonDown("Jump"))
@@ -136,6 +132,12 @@ public class PlayerController : MonoBehaviour
             wallJumpTimer -= Time.fixedDeltaTime;
         }
 
+        // 넉백 중이면 horizontal을 0으로 만들어 컨트롤 잠금
+        if (knockbackTimer > 0f)
+        {
+            horizontal = 0f;
+        }
+
         HandleMovement();
         HandleJumping();
         HandleWallSlide();
@@ -174,9 +176,11 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = new Vector2(Mathf.Sign(rb.linearVelocity.x) * moveSpeed, rb.linearVelocity.y);
         }
 
-        // 캐릭터 방향 전환
-        if (horizontal > 0.1f && !facingRight) Flip();
-        else if (horizontal < -0.1f && facingRight) Flip();
+        if (knockbackTimer <= 0f)
+        {
+            if (horizontal > 0.1f && !facingRight) Flip();
+            else if (horizontal < -0.1f && facingRight) Flip();
+        }
     }
 
     void HandleJumping()
@@ -280,17 +284,12 @@ public class PlayerController : MonoBehaviour
         Gizmos.DrawLine(transform.position, transform.position + Vector3.left * wallCheckDistance);
         Gizmos.DrawLine(transform.position, transform.position + Vector3.right * wallCheckDistance);
     }
+
+    public void ApplyKnockback(Vector2 force, float duration)
+    {
+        if (rb == null) rb = GetComponent<Rigidbody2D>();
+        rb.linearVelocity = force;
+        knockbackTimer = Mathf.Max(knockbackTimer, duration);
+    }
+    public bool FacingRight => facingRight;
 }
-
-/* 사용법:
-1. Player 오브젝트 생성 후 Rigidbody2D (Z축 회전 고정) 및 Collider2D 추가.
-2. 발밑에 "GroundCheck" 빈 오브젝트 추가 (feet 위치), Inspector에서 groundCheck로 지정.
-3. LayerMask로 groundLayer 설정.
-4. Inspector에서 속도, 점프력 등 수치 조정.
-5. Input 설정: Horizontal (A/D 또는 화살표), Jump (Space), Fire3 (Shift) — 대시용.
-
-추가 팁:
-- 새 Input System 사용 시 Input 코드 부분 교체 필요.
-- 애니메이션 연동: Speed, IsGrounded, IsWallSliding, VerticalVelocity 등을 Animator 파라미터로 활용.
-- 대시 기능을 쓰지 않을 경우 allowDash를 false로.
-*/
