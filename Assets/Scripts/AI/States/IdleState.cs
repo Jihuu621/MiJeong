@@ -15,7 +15,7 @@ public class IdleState : IEnemyState
 
     public void ExitState(EnemyStateManager enemy)
     {
-        Debug.Log("[Idle State] : Exit");
+        //Debug.Log("[Idle State] : Exit");
     }
 
     public void UpdateState(EnemyStateManager enemy)

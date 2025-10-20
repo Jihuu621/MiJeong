@@ -4,12 +4,12 @@ public class ChaseState : IEnemyState
 {
     public void EnterState(EnemyStateManager enemy)
     {
-        Debug.Log("[Chase State] : Enter");
+        //Debug.Log("[Chase State] : Enter");
     }
 
     public void ExitState(EnemyStateManager enemy)
     {
-        Debug.Log("[Chase State] : Exit");
+        //Debug.Log("[Chase State] : Exit");
     }
 
     public void UpdateState(EnemyStateManager enemy)

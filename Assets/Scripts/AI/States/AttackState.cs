@@ -4,12 +4,12 @@ public class AttackState : IEnemyState
 {
     public void EnterState(EnemyStateManager enemy)
     {
-        Debug.Log("[Attack State] : Enter");
+        //Debug.Log("[Attack State] : Enter");
     }
 
     public void ExitState(EnemyStateManager enemy)
     {
-        Debug.Log("[Attack State] : Exit");
+        //Debug.Log("[Attack State] : Exit");
     }
 
     public void UpdateState(EnemyStateManager enemy)

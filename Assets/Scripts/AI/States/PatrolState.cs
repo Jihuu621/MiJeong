@@ -16,7 +16,7 @@ public class PatrolState : IEnemyState
 
     public void ExitState(EnemyStateManager enemy)
     {
-        Debug.Log("[Patrol State] : Exit");
+       // Debug.Log("[Patrol State] : Exit");
     }
 
     public void UpdateState(EnemyStateManager enemy)

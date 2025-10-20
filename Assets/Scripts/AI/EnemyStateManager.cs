@@ -19,7 +19,7 @@ public class EnemyStateManager : MonoBehaviour
         CurrentState?.ExitState(this);
         CurrentState = newState;
         CurrentState.EnterState(this);
-        print($"[TransitionToState] {newState}로 스테이츠 변경");
+        //print($"[TransitionToState] {newState}로 스테이츠 변경");
     }
 
 }
