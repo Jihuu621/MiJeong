@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using DG.Tweening;
 
 public class PlayerAttack : MonoBehaviour
 {
@@ -83,15 +84,44 @@ public class PlayerAttack : MonoBehaviour
 
         yield return new WaitForSeconds(0.1f);
 
-        hitbox.enabled = true;
+        // 콤보 단계별 히트박스 색상 변경 및 알파 1로 초기화
         if (hitboxRenderer != null)
-            hitboxRenderer.enabled = showHitboxDebug;
+        {
+            if (showHitboxDebug)
+            {
+                DOTween.Kill(hitboxRenderer);
+                switch (attackType)
+                {
+                    case "A":
+                        hitboxRenderer.color = new Color(1f, 0f, 0f, 1f); // 빨강
+                        break;
+                    case "B":
+                        hitboxRenderer.color = new Color(0f, 1f, 0f, 1f); // 초록
+                        break;
+                    case "C":
+                        hitboxRenderer.color = new Color(0f, 0.5f, 1f, 1f); // 파랑
+                        break;
+                    default:
+                        hitboxRenderer.color = new Color(1f, 1f, 1f, 1f);
+                        break;
+                }
+                hitboxRenderer.enabled = true;
+                // DOTween으로 알파를 0으로 천천히 감소
+                hitboxRenderer.DOFade(0f, 0.4f).SetEase(Ease.OutQuad);
+            }
+            else
+            {
+                hitboxRenderer.enabled = false;
+            }
+        }
+
+        hitbox.enabled = true;
 
         yield return new WaitForSeconds(0.15f);
 
         hitbox.enabled = false;
-        if (hitboxRenderer != null)
-            hitboxRenderer.enabled = false;
+        // SpriteRenderer는 DOTween이 알아서 알파를 0으로 만들고, 
+        // showHitboxDebug가 꺼져있으면 바로 비활성화
 
         canNextCombo = true;
 
