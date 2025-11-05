@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 9208926141055727979}
   - component: {fileID: 3016332583438846750}
   - component: {fileID: 8860087288833687654}
+  - component: {fileID: 2639302532675573010}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -285,10 +286,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitbox: {fileID: 0}
+  hitboxRenderer: {fileID: 0}
   comboDelay: 0.3
+  showHitboxDebug: 0
   damageA: 10
   damageB: 10
   damageC: 15
+--- !u!114 &2639302532675573010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5329500642152477051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7e2b31625bf96b47a6aef4ca0dbc141, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chessPrefab: {fileID: 3301098966039298333, guid: f120a8c2c20d12049adad8565a51a8ad, type: 3}
+  spawnKey: 113
+  forwardDistance: 3.2
+  spawnHeight: 5
+  spawnOrigin: {fileID: 0}
+  safeRadius: 0.3
+  blockingLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  preventSpawnIfBlocked: 1
 --- !u!1 &6112633433587099258
 GameObject:
   m_ObjectHideFlags: 0
