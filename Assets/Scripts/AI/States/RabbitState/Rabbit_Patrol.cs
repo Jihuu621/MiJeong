@@ -6,31 +6,34 @@ public class Rabbit_Patrol : IRabbitState
     float _moveTimer = 0f;
     bool _isPatrolling = false;
     Transform _player;
-    float _detectRange = 10f; // �ν� �ݰ�
+    float _detectRange = 10f; // 인식 반경
+
+    float _hopTimer = 0f;
 
     public void EnterState(RabbitManager enemy)
     {
-        enemy.GetComponent<SpriteRenderer>().color = Color.yellow;
+        if (enemy.Sprite != null) enemy.Sprite.color = Color.yellow;
         _isPatrolling = false;
         _moveTimer = 0f;
-        _movetime = Random.Range(1f, 4f);
+        _movetime = Random.Range(1f, 2.5f); // 너무 오래 움직이지 않도록 제한
         _player = GameObject.FindGameObjectWithTag("Player")?.transform;
+
+        if (enemy.PatrolDirection == 0) enemy.PatrolDirection = 1;
     }
 
     public void ExitState(RabbitManager enemy)
     {
-        // Debug.Log("[Patrol State] : Exit");
     }
 
     public void UpdateState(RabbitManager enemy)
     {
-        // �÷��̾� �ν� �ݰ� üũ
+        // 플레이어 인식 체크
         if (_player != null)
         {
             float dist = Vector2.Distance(enemy.transform.position, _player.position);
             if (dist <= _detectRange)
             {
-                enemy.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
+                if (enemy.Rb != null) enemy.Rb.linearVelocity = Vector2.zero;
                 enemy.TransitionToState(new Rabbit_Chase());
                 return;
             }
@@ -38,24 +41,33 @@ public class Rabbit_Patrol : IRabbitState
 
         if (!_isPatrolling)
         {
-            enemy.transform.localScale = new Vector3(
-                -enemy.transform.localScale.x,
-                 enemy.transform.localScale.y,
-                 enemy.transform.localScale.z);
-
             _isPatrolling = true;
         }
 
-        Vector2 dirVec = enemy.transform.localScale.x < 0 ? Vector2.left : Vector2.right;
+        float dir = enemy.PatrolDirection;
+        Vector2 toStart = (Vector2)enemy.transform.position - enemy.StartPosition;
+        if (Mathf.Abs(toStart.x) >= enemy.PatrolRadius)
+        {
+            dir = -Mathf.Sign(toStart.x);
+            enemy.PatrolDirection = (int)dir;
+        }
+
+        float patrolSpeed = enemy.DataManager != null ? enemy.DataManager.EnemyData.PatrolSpeed : 1f;
+        if (enemy.Rb != null)
+        {
+            enemy.Rb.linearVelocity = new Vector2(dir * patrolSpeed, enemy.Rb.linearVelocity.y);
+        }
+
+        if (enemy.Sprite != null) enemy.Sprite.flipX = (dir > 0);
+
         _moveTimer += Time.deltaTime;
 
-        float patrolSpeed = enemy.GetComponent<EnemyDataManager>().EnemyData.PatrolSpeed;
-
-        enemy.GetComponent<Rigidbody2D>().linearVelocity = new Vector2(dirVec.x * patrolSpeed, 0f);
+        // 깡총거림 적용
+        enemy.TryHop(ref _hopTimer);
 
         if (_moveTimer >= _movetime)
         {
-            enemy.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
+            if (enemy.Rb != null) enemy.Rb.linearVelocity = Vector2.zero;
             enemy.TransitionToState(new Rabbit_Idle());
         }
     }

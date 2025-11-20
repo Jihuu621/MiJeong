@@ -4,19 +4,21 @@ public class Rabbit_Chase : IRabbitState
 {
     Transform _player;
     float _chaseSpeed;
-    float _chaseRange = 15f; // ÃßÀû À¯Áö ¹İ°æ
-    float _attackRange = 1.5f; // °ø°İ ÀüÈ¯ °Å¸®
+    float _chaseRange = 15f; // ì¶”ì  ìœ ì§€ ë°˜ê²½
+    float _attackRange = 1.5f; // ê³µê²© ì „í™˜ ê±°ë¦¬
+
+    float _hopTimer = 0f;
 
     public void EnterState(RabbitManager enemy)
     {
-        enemy.GetComponent<SpriteRenderer>().color = Color.red;
+        if (enemy.Sprite != null) enemy.Sprite.color = Color.red;
         _player = GameObject.FindGameObjectWithTag("Player")?.transform;
-        _chaseSpeed = enemy.GetComponent<EnemyDataManager>().EnemyData.MoveSpeed;
+        _chaseSpeed = enemy.DataManager != null ? enemy.DataManager.EnemyData.MoveSpeed : 2f;
+        _hopTimer = 0f;
     }
 
     public void ExitState(RabbitManager enemy)
     {
-        // Debug.Log("[Chase State] : Exit");
     }
 
     public void UpdateState(RabbitManager enemy)
@@ -29,31 +31,33 @@ public class Rabbit_Chase : IRabbitState
 
         float dist = Vector2.Distance(enemy.transform.position, _player.position);
 
-        // ÇÃ·¹ÀÌ¾î°¡ ÃßÀû ¹İ°æÀ» ¹ş¾î³ª¸é Patrol·Î ÀüÈ¯
+        // ë²”ìœ„ë¥¼ ë²—ì–´ë‚˜ë©´ Patrol
         if (dist > _chaseRange)
         {
-            enemy.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
+            if (enemy.Rb != null) enemy.Rb.linearVelocity = Vector2.zero;
             enemy.TransitionToState(new Rabbit_Patrol());
             return;
         }
 
-        // ÇÃ·¹ÀÌ¾î¿Í ÃæºĞÈ÷ °¡±î¿öÁö¸é AttackState·Î ÀüÈ¯
+        // ê°€ê¹Œìš°ë©´ Attackìœ¼ë¡œ ì „í™˜
         if (dist < _attackRange)
         {
-            enemy.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
+            if (enemy.Rb != null) enemy.Rb.linearVelocity = Vector2.zero;
             enemy.TransitionToState(new Rabbit_Attack());
             return;
         }
 
-        // ÇÃ·¹ÀÌ¾î¸¦ ÇâÇØ ÀÌµ¿ ¹× ¹æÇâ ÀüÈ¯
+        // í”Œë ˆì´ì–´ ë°©í–¥ìœ¼ë¡œ ì´ë™
         float moveDir = _player.position.x > enemy.transform.position.x ? 1f : -1f;
 
-        // º¯°æ: x ½ºÄÉÀÏÀÇ Àı´ë°ªÀº À¯ÁöÇÏ°í ºÎÈ£¸¸ ¹Ù²ß´Ï´Ù.
-        Vector3 ls = enemy.transform.localScale;
-        float absX = Mathf.Abs(ls.x);
-        ls.x = absX * (moveDir >= 0f ? 1f : -1f);
-        enemy.transform.localScale = ls;
+        if (enemy.Rb != null)
+        {
+            enemy.Rb.linearVelocity = new Vector2(moveDir * _chaseSpeed, enemy.Rb.linearVelocity.y);
+        }
 
-        enemy.GetComponent<Rigidbody2D>().linearVelocity = new Vector2(moveDir * _chaseSpeed, 0f);
+        if (enemy.Sprite != null) enemy.Sprite.flipX = (moveDir > 0);
+
+        // ê¹¡ì´ê±°ë¦¼ ì ìš©
+        enemy.TryHop(ref _hopTimer);
     }
 }
