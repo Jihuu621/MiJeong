@@ -27,37 +27,6 @@ public class Health : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
-        PlayerGuard guard = GetComponent<PlayerGuard>();
-
-        if (CompareTag("Player") && guard != null)
-        {
-            guard.NotifyEnemyAttack();
-
-            if (guard.isGuarding)
-            {
-                bool perfect = guard.TryPerfectGuard();
-
-                if (perfect)
-                {
-                    Debug.Log("완벽 가드 성공 - 피해 없음");
-                    return;
-                }
-
-                // 일반 가드
-                if (guard.guardGauge > 0)
-                {
-                    damage = guard.GetDamageAfterGuard(damage);
-                    guard.UseGuardGauge(guard.guardHitCost);
-                }
-                else
-                {
-                    // 게이지없으면넉백
-                    PlayerController player = GetComponent<PlayerController>();
-                    if (player != null)
-                        guard.ApplyGuardBreakKnockback(player);
-                }
-            }
-        }
 
         currentHP -= damage;
         Debug.Log($"{gameObject.name} HP: {currentHP}");
