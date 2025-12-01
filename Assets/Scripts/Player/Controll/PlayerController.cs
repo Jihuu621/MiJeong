@@ -119,6 +119,12 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
+        PlayerParry parry = GetComponent<PlayerParry>();
+        if (parry != null && parry.IsStunned)
+        {
+            rb.linearVelocity = Vector2.zero;
+            return;
+        }
         CheckSurroundings();
 
         if (isDashing)

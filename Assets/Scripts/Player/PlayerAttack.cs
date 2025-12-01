@@ -38,6 +38,10 @@ public class PlayerAttack : MonoBehaviour
 
     void Update()
     {
+        PlayerParry parry = GetComponent<PlayerParry>();
+        if (parry != null && parry.IsStunned)
+            return;
+
         if (Input.GetMouseButtonDown(0))
         {
             if (!isAttacking)
