@@ -9,7 +9,16 @@ public class PlayerDebugger : MonoBehaviour
     {
         if (parry == null) return;
 
-        Gizmos.color = parry.IsParrying ? Color.green : Color.red;
+        // 상태별 색상
+        if (parry.IsFailTime)
+            Gizmos.color = Color.red;      // 패링 실패 구간
+        else if (parry.IsParryTime)
+            Gizmos.color = Color.green;    // 패링 성공 구간
+        else if (parry.IsGuardTime)
+            Gizmos.color = Color.blue;     // 가드 구간
+        else
+            Gizmos.color = Color.white;    // 아무 상태 아님
+
         Gizmos.DrawWireSphere(transform.position, debugRadius);
     }
 }

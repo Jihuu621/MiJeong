@@ -3,13 +3,16 @@ using System.Collections;
 
 public class PlayerParry : MonoBehaviour
 {
-    [Header("패링/가드 설정")]
-    public float parryWindow = 1.5f;      // 패링 구간 1.5초
-    public float guardWindow = 1.5f;      // 가드 구간 1.5초
+    [Header("패링/가드 구간 설정")]
+    public float failWindow = 0.7f;
+    public float parryWindow = 1.0f;
+    public float guardWindow = 1.0f;
 
-    public float parryCooldown = 0.5f;    // 쿨타임
+    public float parryCooldown = 0.5f;
     public float guardDamageReduce = 0.6f;
 
+    [Header("쿨타임 관련설정")]
+    private bool isFailTime = false;
     private bool isParryTime = false;
     private bool isGuardTime = false;
     private bool isCooldown = false;
@@ -19,16 +22,16 @@ public class PlayerParry : MonoBehaviour
     public float currentGauge;
     public float gaugeRegenPerSec = 1f;
 
-    public float parryReward = 5f;   // 패링 성공 시 +5
-    public float guardPenalty = 20f; // 가드 시 -20
+    public float parryReward = 5f;
+    public float guardPenalty = 20f;
 
-    public bool IsParrying => isParryTime;
-
-    private SpriteRenderer sr;
+    //디버깅용 Getter
+    public bool IsFailTime => isFailTime;
+    public bool IsParryTime => isParryTime;
+    public bool IsGuardTime => isGuardTime;
 
     void Start()
     {
-        sr = GetComponent<SpriteRenderer>();
         currentGauge = maxGauge;
     }
 
@@ -46,13 +49,13 @@ public class PlayerParry : MonoBehaviour
     {
         if (isCooldown)
         {
-            Debug.Log("<color=grey>[플레이어] 쿨타임입니다!</color>");
+            Debug.Log("<color=grey>[플레이어] 쿨타임 상태!</color>");
             return;
         }
 
         if (currentGauge < 5f)
         {
-            Debug.Log("<color=red>[플레이어] 게이지 부족으로 패링/가드 사용 불가!</color>");
+            Debug.Log("<color=red>[플레이어] 게이지 부족!</color>");
             return;
         }
 
@@ -60,28 +63,33 @@ public class PlayerParry : MonoBehaviour
         StartCoroutine(CooldownRoutine());
     }
 
-    // 패링 → 가드 순서로 실행 (총 3초)
+    // 총 2.7초 패링/가드 시스템
     IEnumerator ParryGuardRoutine()
     {
-        // 1) 패링 구간 1.5초
-        isParryTime = true;
+        //패링 실패 구간 (0.7초)
+        isFailTime = true;
+        isParryTime = false;
         isGuardTime = false;
-        sr.color = Color.cyan;
-        Debug.Log("<color=cyan>[플레이어] 패링 구간 시작 (1.5초)</color>");
+        Debug.Log("<color=red>[플레이어] 패링 실패 구간 (0.7초)</color>");
+
+        yield return new WaitForSeconds(failWindow);
+
+        //패링 구간 (1초)
+        isFailTime = false;
+        isParryTime = true;
+        Debug.Log("<color=cyan>[플레이어] 패링 가능 구간 (1초)</color>");
 
         yield return new WaitForSeconds(parryWindow);
 
-        // 2) 가드 구간 1.5초
+        //가드 구간 (1초)
         isParryTime = false;
         isGuardTime = true;
-        sr.color = Color.blue;
-        Debug.Log("<color=blue>[플레이어] 가드 구간 시작 (1.5초)</color>");
+        Debug.Log("<color=blue>[플레이어] 가드 구간 (1초)</color>");
 
         yield return new WaitForSeconds(guardWindow);
 
         // 종료
         isGuardTime = false;
-        sr.color = Color.white;
         Debug.Log("<color=grey>[플레이어] 패링/가드 종료</color>");
     }
 
@@ -91,34 +99,36 @@ public class PlayerParry : MonoBehaviour
         isCooldown = true;
         yield return new WaitForSeconds(parryCooldown);
         isCooldown = false;
-        Debug.Log("<color=white>[플레이어] 패링/가드 다시 사용 가능!</color>");
+        Debug.Log("<color=white>[플레이어] 패링 사용 가능!</color>");
     }
 
-    // 적 공격이 들어왔을 때 처리
+    // 데미지 처리
     public float OnHit(EnemyStateManager enemy, float damage)
     {
-        // 1) 패링 성공 구간 (1.5초)
+        if (isFailTime)
+        {
+            Debug.Log("<color=grey>[플레이어] 패링 실패 구간 - 데미지 그대로</color>");
+            return damage;
+        }
+
         if (isParryTime)
         {
-            Debug.Log("<color=green>[플레이어] 패링 성공! 데미지 무효 + 게이지 +5</color>");
+            Debug.Log("<color=green>[플레이어] 패링 성공! 데미지 0 + 게이지 +5</color>");
             currentGauge = Mathf.Min(currentGauge + parryReward, maxGauge);
-
             enemy.TransitionToState(new StunState());
             return 0f;
         }
 
-        // 2) 가드 구간 (1.5초)
         if (isGuardTime)
         {
             float reducedDamage = damage * (1f - guardDamageReduce);
             currentGauge -= guardPenalty;
 
-            Debug.Log($"<color=yellow>[플레이어] 가드 성공! 데미지 감소: {reducedDamage}, 게이지 -{guardPenalty}</color>");
+            Debug.Log($"<color=yellow>[플레이어] 가드 성공! 데미지 감소({reducedDamage}), 게이지 -20</color>");
 
             return reducedDamage;
         }
 
-        // 3) 아무 상태 아님
         return damage;
     }
 }
